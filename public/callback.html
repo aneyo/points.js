@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Можно закрывать это окно!</title>
+    <style>
+      body {
+        margin: 2rem;
+        width: calc(100vw - 4rem);
+        height: calc(100vh - 4rem);
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Это окно теперь можно закрыть!</h2>
+
+    <script>
+      function gibber(length) {
+        let result = "";
+        const characters =
+          "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        for (var i = 0; i < length; i++)
+          result += characters[(Math.random() * characters.length) >> 0];
+        return result;
+      }
+
+      (function () {
+        if (!window.location.search) window.location.search = gibber(64);
+
+        const hash = new URLSearchParams(
+          document.location.hash
+            ? document.location.hash.slice(1)
+            : document.location.search.slice(1)
+        );
+
+        if (hash.has("access_token"))
+          window.opener.postMessage([true, hash.get("access_token")]);
+        else if (hash.has("error"))
+          window.opener.postMessage([false, hash.get("error_description")]);
+        else window.opener.postMessage([false, null]);
+      })();
+    </script>
+  </body>
+</html>
