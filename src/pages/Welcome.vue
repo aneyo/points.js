@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from "vue-demi";
 import { useStore } from "../store";
 
-const LOGIN_REDIRECT = "https://aneyo.github.io/points.js/callback.html";
+const LOGIN_REDIRECT = "https://aneyo.github.io/points.js/callback";
 const LOGIN_PAGE = `https://id.twitch.tv/oauth2/authorize?response_type=token&redirect_uri=${LOGIN_REDIRECT}&scope=channel:read:redemptions&client_id=loh6hmf1odxlkqbgmv7b22lw4bl5rm&force_verify=true`;
 
 onMounted(() => {
