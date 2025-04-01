@@ -137,20 +137,52 @@ onBeforeMount(() => {
   store.config!.pos ??= { v: "top", h: "right" };
 });
 
-const greeting = computed(() => {
+type TimeType =
+  | "new-year"
+  | "valentine"
+  | "fools"
+  | "night"
+  | "morning"
+  | "afternoon"
+  | "evening"
+  | "default";
+const timeType = computed<TimeType>(() => {
   const date = new Date();
   const month = date.getMonth();
   const day = date.getDate();
 
-  if (month == 11 && day > 30) return ["С новым годом", "!!!!"];
-  if (month == 1 && day == 14) return ["Я тебя люблю", " <3"];
-  if (month == 3 && day == 1) return ["Привет", " :)"];
+  if (month == 11 && day > 30) return "new-year";
+  if (month == 1 && day == 14) return "valentine";
+  if (month == 3 && day == 1) return "fools";
 
   const hour = date.getHours();
-  if (hour < 4) return ["Доброй ночи", "!"];
-  if (hour < 12) return ["Доброе утро", "!"];
-  if (hour < 18) return ["Добрый день", "!"];
-  return ["Добрый вечер", "!"];
+  if (hour < 3) return "night";
+  if (hour < 11) return "morning";
+  if (hour < 17) return "afternoon";
+  if (hour < 23) return "evening";
+
+  return "default";
+});
+
+const greeting = computed(() => {
+  switch (timeType.value) {
+    case "new-year":
+      return ["С новым годом", "!!!!"];
+    case "valentine":
+      return ["Я тебя люблю", " <3"];
+    case "fools":
+      return ["Привет", " :)"];
+    case "night":
+      return ["Доброй ночи", "!"];
+    case "morning":
+      return ["Доброе утро", "!"];
+    case "afternoon":
+      return ["Добрый день", "!"];
+    case "evening":
+      return ["Добрый вечер", "!"];
+  }
+
+  return ["Привет", "!"];
 });
 </script>
 
