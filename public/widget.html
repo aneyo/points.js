@@ -396,7 +396,7 @@
         EVENT_SUB.start();
 
         EVENT_SUB.onChannelRedemptionAdd(config.channelID, (e) => {
-          if (e.rewardTitle != config.rewardId || e.rewardId != config.rewardId)
+          if (e.rewardTitle != config.rewardId && e.rewardId != config.rewardId)
             return;
           return window.playRandomSound(e.userName);
         });
