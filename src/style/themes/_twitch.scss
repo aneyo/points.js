@@ -1,0 +1,19 @@
+@mixin twitch-colors {
+  --twitch-accent: var(--twitch-purple);
+  --twitch-purple: var(--twitch-purple-9);
+  --twitch-purple-1: #040109;
+  --twitch-purple-2: #0d031c;
+  --twitch-purple-3: #15052e;
+  --twitch-purple-4: #24094e;
+  --twitch-purple-5: #330c6e;
+  --twitch-purple-6: #451093;
+  --twitch-purple-7: #5c16c5;
+  --twitch-purple-8: #772ce8;
+  --twitch-purple-9: #9147ff;
+  --twitch-purple-10: #a970ff;
+  --twitch-purple-11: #bf94ff;
+  --twitch-purple-12: #d1b3ff;
+  --twitch-purple-13: #e3d1ff;
+  --twitch-purple-14: #ede0ff;
+  --twitch-purple-15: #f3ebff;
+}

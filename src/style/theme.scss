@@ -1,0 +1,32 @@
+@use "./themes/light" as light;
+@use "./themes/dark" as dark;
+@use "./themes/twitch" as twitch;
+
+:root {
+  @include twitch.twitch-colors;
+
+  &:not([theme="dark"]),
+  &:not([theme="light"]) {
+    @include dark.theme-dark; // default theme
+    color-scheme: dark;
+    @media (prefers-color-scheme: light) {
+      @include light.theme-light;
+      color-scheme: light;
+    }
+  }
+
+  &[theme="dark"] {
+    @include dark.theme-dark;
+    color-scheme: dark;
+  }
+  &[theme="light"] {
+    @include light.theme-light;
+    color-scheme: light;
+  }
+}
+
+:root {
+  transition: all 0.2s;
+  color: var(--md-sys-color-on-background);
+  background-color: var(--md-sys-color-background);
+}

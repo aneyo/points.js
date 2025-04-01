@@ -3,11 +3,13 @@ import "./style/reset.css";
 import "./style/main.scss";
 import "./style/icons.css";
 import "equal-vue/dist/style.css";
+import "./style/theme.scss";
+import "./style/components.scss";
 
 import { useStore } from "./store";
-import Welcome from "./pages/Welcome.vue";
 import Home from "./pages/Home.vue";
-import { onMounted, ref } from "vue-demi";
+import { onMounted, ref, watch } from "vue-demi";
+import Landing from "./pages/Landing.vue";
 
 const store = useStore();
 const loading = ref(true);
@@ -26,6 +28,15 @@ onMounted(async () => {
 
   loading.value = false;
 });
+
+watch(
+  () => store.config?.theme,
+  () => {
+    const theme = store.config?.theme ?? "auto";
+    document.documentElement.setAttribute("theme", theme);
+  },
+  { immediate: true }
+);
 </script>
 
 <template>
@@ -33,7 +44,7 @@ onMounted(async () => {
     <it-loading />
   </div>
 
-  <Welcome v-if="!loading && !store.token"></Welcome>
+  <Landing v-if="!loading && !store.token"></Landing>
   <Home v-if="!loading && store.token && store.channel"></Home>
 </template>
 

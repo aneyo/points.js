@@ -1,6 +1,8 @@
 import { defineStore } from "pinia";
 import localforage from "localforage";
 
+const themes = ["auto", "dark", "light"];
+
 localforage.config({
   driver: localforage.INDEXEDDB,
   storeName: "points.js",
@@ -16,6 +18,7 @@ interface TwitchUser {
 }
 
 interface MainConfig {
+  theme: "auto" | "light" | "dark";
   list: string;
   reward?: string;
   volume: number;
@@ -42,6 +45,7 @@ export interface Reward {
 }
 
 const defaultConfig: MainConfig = {
+  theme: "auto",
   list: "https://gist.githubusercontent.com/aneyo/4566b18ed624ac7c2b28daaedc28c7dd/raw/points.txt",
   volume: 0.5,
   pos: {
@@ -104,6 +108,19 @@ const store = defineStore("main", {
           "config",
           JSON.parse(JSON.stringify(this.config))
         );
+    },
+
+    nextTheme() {
+      if (this.config == null) return;
+      const currentIndex = themes.findIndex((t) => t === this.config!.theme);
+      if (currentIndex < 0) {
+        this.config!.theme = themes[0] as "auto";
+        return;
+      }
+
+      this.config!.theme = themes[
+        currentIndex + 1 >= themes.length ? 0 : currentIndex + 1
+      ] as "auto";
     },
   },
 });
