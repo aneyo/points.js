@@ -369,7 +369,7 @@
         channel: hashConfig.get("c"),
         channelID: null,
         soundsListURL: hashConfig.get("l"),
-        rewardName: hashConfig.get("r"),
+        rewardId: hashConfig.get("r"),
         volume: hashConfig.get("v") ?? 1.0,
       };
 
@@ -396,7 +396,8 @@
         EVENT_SUB.start();
 
         EVENT_SUB.onChannelRedemptionAdd(config.channelID, (e) => {
-          if (e.rewardTitle != config.rewardName) return;
+          if (e.rewardTitle != config.rewardId || e.rewardId != config.rewardId)
+            return;
           return window.playRandomSound(e.userName);
         });
         EVENT_SUB.onSubscriptionCreateFailure((a, b) => {
