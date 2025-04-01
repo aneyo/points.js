@@ -2,7 +2,13 @@
 import { computed, onMounted, onUnmounted, ref } from "vue-demi";
 import { useStore } from "../store";
 
-const LOGIN_REDIRECT = "https://aneyo.github.io/points.js/callback";
+// const LOGIN_REDIRECT = "https://aneyo.github.io/points.js/callback";
+const LOGIN_REDIRECT = `${document.location.protocol}//${
+  document.location.host
+}/${[
+  ...document.location.pathname.split("/").filter((c) => c.trim()),
+  "callback.html",
+].join("/")}`;
 const LOGIN_PAGE = `https://id.twitch.tv/oauth2/authorize?response_type=token&redirect_uri=${LOGIN_REDIRECT}&scope=channel:read:redemptions&client_id=loh6hmf1odxlkqbgmv7b22lw4bl5rm&force_verify=true`;
 
 onMounted(() => {
@@ -34,6 +40,7 @@ function openLoginPage() {
 }
 
 function onPopupMessage(e: MessageEvent) {
+  if (!Array.isArray(e.data)) return;
   const [success, data] = e.data as [success: boolean, data: string];
 
   if (e.origin !== window.origin) return;
