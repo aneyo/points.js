@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>do not share this link with others</title>
+    <script type="module">
+      var __typeError = (msg) => {
+        throw TypeError(msg);
+      };
+      var __accessCheck = (obj, member, msg) =>
+        member.has(obj) || __typeError("Cannot " + msg);
+      var __privateGet = (obj, member, getter) => (
+        __accessCheck(obj, member, "read from private field"),
+        getter ? getter.call(obj) : member.get(obj)
+      );
+      var __privateAdd = (obj, member, value) =>
+        member.has(obj)
+          ? __typeError("Cannot add the same private member more than once")
+          : member instanceof WeakSet
+          ? member.add(obj)
+          : member.set(obj, value);
+      var __privateSet = (obj, member, value, setter) => (
+        __accessCheck(obj, member, "write to private field"),
+        setter ? setter.call(obj, value) : member.set(obj, value),
+        value
+      );
+      var _ctx, _audioCache, _metaCache;
+      class Soundboard {
+        constructor() {
+          __privateAdd(this, _ctx, null);
+          __privateAdd(this, _audioCache, /* @__PURE__ */ new Map());
+          __privateAdd(this, _metaCache, /* @__PURE__ */ new Map());
+        }
+        init() {
+          __privateSet(this, _ctx, new AudioContext({}));
+        }
+        async saveAudio(source, meta, force = false) {
+          if (__privateGet(this, _audioCache).has(source)) {
+            if (force) console.warn(`overriding ${source} audio file...`);
+            else return source;
+          }
+          const data = await (await fetch(source)).arrayBuffer();
+          const buffer = await __privateGet(this, _ctx).decodeAudioData(data);
+          __privateGet(this, _audioCache).set(source, buffer);
+          __privateGet(this, _metaCache).set(source, meta ?? {});
+          return source;
+        }
+        playAudio(source, meta, progress) {
+          return new Promise((resolve, reject) => {
+            if (!__privateGet(this, _audioCache).has(source))
+              return reject(Error("No audio file found"));
+            const buffSource = __privateGet(this, _ctx).createBufferSource();
+            buffSource.buffer = __privateGet(this, _audioCache).get(source);
+            const _meta = meta ?? __privateGet(this, _metaCache).get(source);
+            if (_meta != null) {
+              if (typeof _meta.volume === "number")
+                buffSource.connect(
+                  new GainNode(__privateGet(this, _ctx), {
+                    gain: _meta.volume,
+                  })
+                );
+              if (typeof _meta.pan === "number")
+                buffSource.connect(
+                  new StereoPannerNode(__privateGet(this, _ctx), {
+                    pan: Math.max(-1, Math.min(1, _meta.pan)),
+                  })
+                );
+            }
+            buffSource.connect(__privateGet(this, _ctx).destination);
+            buffSource.addEventListener("ended", () => resolve(), {
+              once: true,
+            });
+            buffSource.start(
+              Math.max(
+                0,
+                Math.min(
+                  (_meta == null ? void 0 : _meta.start) ?? 0,
+                  buffSource.buffer.duration
+                )
+              )
+            );
+          });
+        }
+        async saveAndPlay(source, meta = {}) {
+          const audio = await this.saveAudio(source, meta);
+          return await this.playAudio(audio);
+        }
+        getRandomAudio() {
+          const index = Math.floor(
+            Math.random() * __privateGet(this, _audioCache).size
+          );
+          const [url, buffer] = Array.from(
+            __privateGet(this, _audioCache).entries()
+          )[index];
+          const meta = __privateGet(this, _metaCache).get(url);
+          return { url, meta, duration: buffer.duration * 1e3 };
+        }
+      }
+      _ctx = new WeakMap();
+      _audioCache = new WeakMap();
+      _metaCache = new WeakMap();
+
+      window.Soundboard = Soundboard;
+    </script>
+    <style>
+      * {
+        user-select: none;
+      }
+
+      body {
+        width: 100vw;
+        height: 100vh;
+        margin: 0;
+        overflow: hidden;
+
+        --gap: 0.25rem;
+        --round: 0.25rem;
+        --height: 2rem;
+        --pad: var(--gap);
+        --v: -1;
+      }
+
+      .list {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        gap: var(--gap);
+        margin: var(--pad);
+      }
+
+      .list.top {
+        top: 0;
+      }
+      .list.bottom {
+        bottom: 0;
+      }
+      .list.left {
+        left: 0;
+        align-items: start;
+      }
+      .list.right {
+        right: 0;
+        align-items: end;
+      }
+
+      .list > .sound {
+        padding: 0 0.8rem;
+        height: var(--height);
+        color: white;
+        background-color: #000000de;
+        border-radius: var(--round);
+        display: flex;
+        align-items: center;
+
+        font-family: Pangolin, cursive !important;
+        font-weight: bold;
+
+        gap: 0.25rem;
+
+        --a: calc((var(--gap) + var(--height)) * var(--v));
+        animation: end 150ms linear 0s 1 reverse;
+        transition: opacity 120ms linear, margin-top 200ms linear;
+
+        position: relative;
+        overflow: hidden;
+      }
+
+      .sound.error {
+        background-color: #7e0000ab;
+      }
+
+      .sound.duration::after {
+        content: "";
+        background-color: #ffffffb7;
+        position: absolute;
+        inset: 0;
+        animation: duration var(--duration, 5s) linear 0s 1 forwards;
+      }
+
+      .sound.end {
+        margin-top: var(--a);
+        opacity: 0;
+      }
+
+      @keyframes end {
+        from {
+          margin-top: 0;
+          opacity: 1;
+        }
+
+        95% {
+          opacity: 0;
+        }
+
+        to {
+          margin-top: var(--a);
+          opacity: 0;
+        }
+      }
+
+      @keyframes duration {
+        from {
+          width: 0%;
+          opacity: 1;
+        }
+
+        85% {
+          opacity: 1;
+        }
+
+        to {
+          opacity: 0.5;
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="list" class="list top right"></div>
+
+    <script id="template" type="application/html">
+      <div class="sound">
+        <svg xmlns="http://www.w3.org/2000/svg" height="1.5em" viewBox="0 -960 960 960" width="1.2em" fill="currentColor"><path d="M760-481q0-83-44-151.5T598-735q-15-7-22-21.5t-2-29.5q6-16 21.5-23t31.5 0q97 43 155 131.5T840-481q0 108-58 196.5T627-153q-16 7-31.5 0T574-176q-5-15 2-29.5t22-21.5q74-34 118-102.5T760-481ZM280-360H160q-17 0-28.5-11.5T120-400v-160q0-17 11.5-28.5T160-600h120l132-132q19-19 43.5-8.5T480-703v446q0 27-24.5 37.5T412-228L280-360Zm380-120q0 42-19 79.5T591-339q-10 6-20.5.5T560-356v-250q0-12 10.5-17.5t20.5.5q31 25 50 63t19 80Z"/></svg>
+        <span>%username%</span>
+      </div>
+    </script>
+    <script type="module">
+      const soundboard = new Soundboard();
+      const loadedSounds = new Set();
+
+      const state = {
+        ready: false,
+      };
+      async function loadSounds(
+        url = "https://gist.githubusercontent.com/aneyo/4566b18ed624ac7c2b28daaedc28c7dd/raw/points.txt"
+      ) {
+        soundboard.init();
+        const text = await (await fetch(url)).text();
+        console.log("loaded list:", url);
+        const list = text.split("\n").filter((l) => !l.startsWith("#"));
+        await Promise.allSettled(
+          list.map((l) =>
+            (async () => {
+              try {
+                await soundboard.saveAudio(l);
+                loadedSounds.add(l);
+              } catch (error) {
+                console.error(l, error);
+              }
+            })()
+          )
+        );
+
+        console.log("load ended!");
+        state.ready = true;
+
+        const randomNicks = [
+          "aneyuu",
+          "aneyo",
+          "aneyoof",
+          "maidaya",
+          "maidhonoka",
+          "maidpaimon",
+          "homelynes",
+          "nessybaka",
+        ];
+        window.addEventListener("click", () => {
+          const name =
+            randomNicks[Math.floor(randomNicks.length * Math.random())];
+          return window.playRandomSound(name);
+        });
+      }
+
+      const template = document.getElementById("template").innerText;
+      const listEl = document.getElementById("list");
+
+      function addElement(name, sound, duration = 3000) {
+        const _element = document.createElement("div");
+        _element.innerHTML = template.replace("%username%", name).trim();
+        const element = _element.firstChild;
+        element.setAttribute("style", `--duration:${duration}ms`);
+        element.classList.add("duration");
+        listEl.append(element);
+        return element;
+      }
+
+      function addMessageElement(message, type = "error") {
+        const element = document.createElement("div");
+        element.innerHTML = message;
+        element.classList.add("sound", type);
+        listEl.append(element);
+        return element;
+      }
+
+      window.spawn = addMessageElement;
+
+      async function playSound(name, sound, duration) {
+        if (!state.ready) return;
+
+        const element = addElement(name, sound, duration);
+        try {
+          await soundboard.playAudio(sound);
+        } catch (error) {
+          console.error(error);
+          element.classList.add("error");
+          return setTimeout(() => endSound(element), 3_000);
+        }
+
+        return endSound(element);
+      }
+
+      /** @param {HTMLDivElement} el */
+      function endSound(el) {
+        el.classList.add("end");
+        setTimeout(() => {
+          listEl.removeChild(el);
+        }, 10_000);
+      }
+
+      window.playRandomSound = function (name) {
+        const sound = soundboard.getRandomAudio();
+        return playSound(name, sound.url, sound.duration);
+      };
+
+      window.loadSounds = loadSounds;
+      window.addMessageElement = addMessageElement;
+    </script>
+
+    <script type="module">
+      import { ApiClient } from "https://cdn.jsdelivr.net/npm/@twurple/api@7.2.1/+esm";
+      import { StaticAuthProvider } from "https://cdn.jsdelivr.net/npm/@twurple/auth@7.2.1/+esm";
+      import { EventSubWsListener } from "https://cdn.jsdelivr.net/npm/@twurple/eventsub-ws@7.2.1/+esm";
+
+      const hashToken = document.location.hash.slice(1);
+      const hashConfig = new URLSearchParams(hashToken);
+
+      const clientID =
+        hashConfig.get("client") ?? "loh6hmf1odxlkqbgmv7b22lw4bl5rm";
+      try {
+        if (!hashConfig.has("t")) throw Error("No token");
+        if (!hashConfig.has("c")) throw Error("No channel");
+        if (!hashConfig.has("l")) throw Error("No list");
+        if (!hashConfig.has("r")) throw Error("No reward name");
+      } catch (error) {
+        addMessageElement(`${error} :(`);
+      }
+
+      /* styling */
+      const _ = document.getElementById("list");
+      if (
+        ["top", "bottom"].filter((anchor) =>
+          _.classList.toggle(anchor, hashConfig.has(anchor))
+        ).length < 1
+      )
+        _.classList.add("top");
+      if (
+        ["left", "right"].filter((anchor) =>
+          _.classList.toggle(anchor, hashConfig.has(anchor))
+        ).length < 1
+      )
+        _.classList.add("right");
+
+      const config = {
+        token: hashConfig.get("t"),
+        channel: hashConfig.get("c"),
+        channelID: null,
+        soundsListURL: hashConfig.get("l"),
+        rewardName: hashConfig.get("r"),
+      };
+
+      async function getUserID(userName) {
+        const user = await API.users.getUserByName(userName);
+        return user?.id;
+      }
+
+      const API = new ApiClient({
+        authProvider: new StaticAuthProvider(clientID, config.token),
+      });
+      const EVENT_SUB = new EventSubWsListener({ apiClient: API });
+
+      config.channelID = await getUserID(config.channel);
+      try {
+        if (window.obsstudio == null)
+          window.addEventListener(
+            "click",
+            () => loadSounds(config.soundsListURL),
+            { once: true }
+          );
+        else await loadSounds(config.soundsListURL);
+
+        EVENT_SUB.start();
+
+        EVENT_SUB.onChannelRedemptionAdd(config.channelID, (e) => {
+          if (e.rewardTitle != config.rewardName) return;
+          return window.playRandomSound(e.userName);
+        });
+        EVENT_SUB.onSubscriptionCreateFailure((a, b) => {
+          console.log(a, b);
+          addMessageElement("wrong token? :(");
+          EVENT_SUB.stop();
+        });
+      } catch (error) {
+        console.error(error);
+        addMessageElement("check console :(");
+        EVENT_SUB.stop();
+      }
+    </script>
+  </body>
+</html>
