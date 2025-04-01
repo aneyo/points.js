@@ -17,17 +17,11 @@ interface TwitchUser {
 
 interface MainConfig {
   list: string;
-  reward: {
-    random: string;
-    choose: string;
-    useBoth: boolean;
-  };
-  random: boolean;
+  reward?: string;
   volume: number;
-  show: {
-    rewards: boolean;
-    sounds: boolean;
-    inlineSound: boolean;
+  pos: {
+    v: "top" | "bottom";
+    h: "left" | "right";
   };
 }
 
@@ -37,19 +31,22 @@ interface MainStore {
   config: MainConfig | null;
 }
 
+export interface Reward {
+  id: string;
+  name: string;
+  description: string;
+  enabled: boolean;
+  color: string;
+  cost: number;
+  icon: string;
+}
+
 const defaultConfig: MainConfig = {
   list: "https://gist.githubusercontent.com/aneyo/4566b18ed624ac7c2b28daaedc28c7dd/raw/points.txt",
-  reward: {
-    random: "",
-    choose: "",
-    useBoth: false,
-  },
-  random: true,
-  volume: 0.8,
-  show: {
-    inlineSound: false,
-    sounds: true,
-    rewards: false,
+  volume: 0.5,
+  pos: {
+    v: "top",
+    h: "right",
   },
 };
 

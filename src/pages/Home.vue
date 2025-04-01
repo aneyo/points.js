@@ -1,7 +1,15 @@
 <script lang="ts" setup>
-import { ref, computed, watch, inject } from "vue-demi";
-import { useStore } from "../store";
+import {
+  ref,
+  computed,
+  watch,
+  inject,
+  onMounted,
+  onBeforeMount,
+} from "vue-demi";
+import { useStore, Reward } from "../store";
 import copy from "copy-to-clipboard";
+import SoundSelect from "../components/SoundSelect.vue";
 
 const message: any = inject("$message");
 
@@ -12,6 +20,7 @@ const name = computed(
 
 const token = ref(store.token + "");
 const volume = ref(store.config!.volume * 100);
+const rewardObject = ref<null | Reward>(null);
 
 watch(
   () => volume.value,
@@ -35,6 +44,18 @@ watch(
   { deep: true }
 );
 
+watch(
+  () => rewardObject.value,
+  () => {
+    if (store.config == null) return;
+    if (rewardObject.value == null) {
+      store.config.reward = undefined;
+      return;
+    }
+    store.config.reward = rewardObject.value.id;
+  }
+);
+
 const volumeIcon = computed(() => {
   switch (true) {
     case volume.value >= 80:
@@ -52,61 +73,23 @@ const volumeIcon = computed(() => {
 });
 
 const validators = {
-  token: computed(() => token.value !== ""),
-  list: computed(() => store.config!.list !== ""),
-  rewardRandom: computed(
-    () =>
-      store.config!.reward.random.trim() !== "" &&
-      store.config!.reward.choose.trim() !== store.config!.reward.random.trim()
+  token: computed(
+    () => typeof token.value === "string" && token.value.trim() !== ""
   ),
-  rewardSelect: computed(
+  list: computed(
     () =>
-      !store.config!.reward.useBoth ||
-      (store.config!.reward.choose.trim() !== "" &&
-        store.config!.reward.choose.trim() !==
-          store.config!.reward.random.trim())
+      typeof store.config?.list === "string" && store.config.list.trim() !== ""
   ),
-};
-
-const validatorMessages = {
-  rewardRandom: computed(() => {
-    switch (true) {
-      case store.config!.reward.random.trim() === "":
-        return "Название награды не может быть пустым!";
-
-      case store.config!.reward.useBoth &&
-        store.config!.reward.choose.trim() ===
-          store.config!.reward.random.trim():
-        return "Название этой награды не может совподать с названием другой!";
-
-      default:
-        return null;
-    }
-  }),
-
-  rewardSelect: computed(() => {
-    if (!store.config!.reward.useBoth) return null;
-
-    switch (true) {
-      case store.config!.reward.choose.trim() === "":
-        return "Название награды не может быть пустым!";
-
-      case store.config!.reward.choose.trim() ===
-        store.config!.reward.random.trim():
-        return "Название этой награды не может совподать с названием другой!";
-
-      default:
-        return null;
-    }
-  }),
+  reward: computed(
+    () =>
+      typeof store.config?.reward === "string" &&
+      store.config.reward.trim() !== ""
+  ),
 };
 
 const isValid = computed(
   () =>
-    validators.list.value &&
-    validators.rewardRandom.value &&
-    validators.rewardSelect.value &&
-    validators.token.value
+    validators.list.value && validators.reward.value && validators.token.value
 );
 
 const generatedLink = computed(() => {
@@ -116,22 +99,13 @@ const generatedLink = computed(() => {
   params.set("l", store.config!.list);
   params.set("c", store.channel!.login);
   params.set("v", store.config!.volume.toString());
+  params.set("r", store.config!.reward!);
 
-  params.set("r", store.config!.reward.random);
-  if (store.config!.reward.useBoth)
-    params.set("e", store.config!.reward.choose);
-
-  params.set("R", store.config!.show.rewards ? "1" : "0");
-  params.set(
-    "S",
-    store.config!.show.sounds
-      ? store.config!.show.inlineSound
-        ? "2"
-        : "1"
-      : "0"
-  );
-
-  if (!store.config!.random) params.set("fixed", "");
+  // positions
+  if (store.config?.pos.h == "left") params.set("left", "");
+  else params.set("right", "");
+  if (store.config?.pos.v == "top") params.set("top", "");
+  else params.set("bottom", "");
 
   const visibleLink = head + params.toString();
 
@@ -152,6 +126,10 @@ async function logout() {
   await store.reset();
   message.success({ text: `Вы вышли из аккаунта @${name}!`, duration: 1500 });
 }
+
+onBeforeMount(() => {
+  store.config!.pos ??= { v: "top", h: "right" };
+});
 </script>
 
 <template>
@@ -170,16 +148,6 @@ async function logout() {
     </div>
 
     <it-input
-      label-top="API Токен"
-      placeholder="Twitch API Токен"
-      prefix-icon="vpn_key"
-      type="password"
-      v-model.trim="token"
-      :status="validators.token.value ? null : 'danger'"
-      :message="validators.token.value ? null : 'Токен не может быть пустым!'"
-    />
-
-    <it-input
       label-top="Список звуков"
       prefix-icon="summarize"
       placeholder="https://gist.githubusercontent.com/aneyo/4566b18ed624ac7c2b28daaedc28c7dd/raw/points.txt"
@@ -188,37 +156,30 @@ async function logout() {
       :message="validators.list.value ? null : 'Нужно указать ссылку на лист!'"
     />
 
-    <it-checkbox
-      type="primary"
-      label="Перемешивать порядок звуков"
-      sub-label="При каждом перезапуске порядок звуков будет перемешиватся, полезно для награды выборочных звуков"
-      v-model="store.config!.random"
-    />
+    <SoundSelect :token="token" v-model:selected="rewardObject" />
 
-    <it-input
-      label-top="Название награды"
-      prefix-icon="star_rate"
-      placeholder="Название награды, которая будет использоваться для воспроизвидения случайных звуков"
-      v-model.trim="store.config!.reward.random"
-      :status="validatorMessages.rewardRandom.value ? 'danger' : null"
-      :message="validatorMessages.rewardRandom.value"
-    />
-
-    <it-input
-      label-top="Название награды для выборочного звука"
-      prefix-icon="star_half"
-      placeholder="Название награды, которая будет использоваться для воспроизвидения выборочных звуков"
-      v-if="store.config!.reward.useBoth"
-      v-model.trim="store.config!.reward.choose"
-      :status="validatorMessages.rewardSelect.value ? 'danger' : null"
-      :message="validatorMessages.rewardSelect.value"
-    />
-
-    <it-checkbox
-      type="primary"
-      label="Использовать награду для выборочных звуков"
-      v-model="store.config!.reward.useBoth"
-    />
+    <span class="it-input-label" style="margin-bottom: -0.5rem">
+      Где показывать награды
+    </span>
+    <div style="display: flex; gap: 0.3rem; align-items: center">
+      <it-select v-model="store.config!.pos.h" :options="['left', 'right']">
+        <template v-slot:selected-option="{ props }">
+          {{ store.config!.pos.h == "left" ? "Слева" : "Справа" }}
+        </template>
+        <template v-slot:option="{ props, option }">
+          {{ option == "left" ? "Слева" : "Справа" }}
+        </template>
+      </it-select>
+      <span>+</span>
+      <it-select v-model="store.config!.pos.v" :options="['top', 'bottom']">
+        <template v-slot:selected-option="{ props }">
+          {{ store.config!.pos.v == "top" ? "Сверху" : "Снизу" }}
+        </template>
+        <template v-slot:option="{ props, option }">
+          {{ option == "top" ? "Сверху" : "Снизу" }}
+        </template>
+      </it-select>
+    </div>
 
     <span class="it-input-label volume-label">
       <it-icon :name="volumeIcon" />
@@ -231,30 +192,6 @@ async function logout() {
       :step="1"
       :stepPoints="true"
       :max="100"
-    />
-
-    <it-divider />
-
-    <it-checkbox
-      type="primary"
-      label="Показывать активированные награды"
-      sub-label="В правом нижнем углу виджета будут показываться все активированные награды, за исключением наград звуков"
-      v-model="store.config!.show.rewards"
-    />
-
-    <it-checkbox
-      type="primary"
-      label="Показывать активированные звуки"
-      sub-label="В правом нижнем углу виджета будут показываться все активированные звуки"
-      v-model="store.config!.show.sounds"
-    />
-
-    <it-checkbox
-      type="primary"
-      label="Показывать звуки в одну линию"
-      sub-label="Только один звук за раз будет показан"
-      :disabled="!store.config!.show.sounds"
-      v-model="store.config!.show.inlineSound"
     />
   </div>
 
@@ -273,7 +210,6 @@ async function logout() {
 
     <template #body>
       <div class="modal">
-        <it-input prefix-icon="link" v-model="generatedLink[0]" disabled />
         <div class="modal-buttons">
           <it-button
             pulse
