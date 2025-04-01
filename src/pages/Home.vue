@@ -123,7 +123,7 @@ function copyLink() {
     message({
       type: "success",
       text: "Ссылка скопирована!",
-      duration: 1_000,
+      duration: 5000,
     });
 }
 
@@ -165,9 +165,8 @@ const greeting = computed(() => {
       <div class="message">
         {{ greeting[0] }},
         <a class="accent" target="_blank" rel="noreferrer" :href="channelLink">
-          {{ name }}
-        </a>
-        {{ greeting[1] }}
+          {{ name }} </a
+        ><span>{{ greeting[1] }}</span>
       </div>
 
       <div style="display: flex; gap: 0.2rem">
