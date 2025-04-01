@@ -233,7 +233,8 @@
         ready: false,
       };
       async function loadSounds(
-        url = "https://gist.githubusercontent.com/aneyo/4566b18ed624ac7c2b28daaedc28c7dd/raw/points.txt"
+        url = "https://gist.githubusercontent.com/aneyo/4566b18ed624ac7c2b28daaedc28c7dd/raw/points.txt",
+        volume = 1
       ) {
         soundboard.init();
         const text = await (await fetch(url)).text();
@@ -243,7 +244,9 @@
           list.map((l) =>
             (async () => {
               try {
-                await soundboard.saveAudio(l);
+                await soundboard.saveAudio(l, {
+                  volume: isNaN(volume) ? 1 : volume,
+                });
                 loadedSounds.add(l);
               } catch (error) {
                 console.error(l, error);
@@ -367,6 +370,7 @@
         channelID: null,
         soundsListURL: hashConfig.get("l"),
         rewardName: hashConfig.get("r"),
+        volume: hashConfig.get("v") ?? 1.0,
       };
 
       async function getUserID(userName) {
