@@ -230,7 +230,23 @@
         <span>%username%</span>
       </div>
     </script>
+    <script>
+      window.hashConfig = new URLSearchParams(document.location.hash.slice(1));
+      window.randomNicks = [
+        "aneyuu",
+        "aneyo",
+        "aneyoof",
+        "maidaya",
+        "maidhonoka",
+        "maidpaimon",
+        "homelynes",
+        "nessybaka",
+      ];
+    </script>
     <script type="module">
+      const broadcast = new BroadcastChannel(
+        hashConfig.get("b") ?? "widget.points.js"
+      );
       const soundboard = new Soundboard();
       const loadedSounds = new Set();
 
@@ -263,21 +279,7 @@
         console.log("load ended!");
         state.ready = true;
 
-        const randomNicks = [
-          "aneyuu",
-          "aneyo",
-          "aneyoof",
-          "maidaya",
-          "maidhonoka",
-          "maidpaimon",
-          "homelynes",
-          "nessybaka",
-        ];
-        window.addEventListener("click", () => {
-          const name =
-            randomNicks[Math.floor(randomNicks.length * Math.random())];
-          return window.playRandomSound(name);
-        });
+        window.addEventListener("click", window.fakeSound);
       }
 
       const template = document.getElementById("template").innerText;
@@ -305,7 +307,7 @@
 
       async function playSound(name, sound, duration) {
         if (!state.ready) return;
-
+        broadcast.postMessage({ name, sound, duration });
         const element = addElement(name, sound, duration);
         try {
           await soundboard.playAudio(sound);
@@ -326,6 +328,12 @@
         }, 10_000);
       }
 
+      window.fakeSound = function () {
+        const name =
+          randomNicks[Math.floor(randomNicks.length * Math.random())];
+        return window.playRandomSound(name);
+      };
+
       window.playRandomSound = function (name) {
         const sound = soundboard.getRandomAudio();
         return playSound(name, sound.url, sound.duration);
@@ -333,15 +341,14 @@
 
       window.loadSounds = loadSounds;
       window.addMessageElement = addMessageElement;
+
+      broadcast.addEventListener("message", window.fakeSound);
     </script>
 
     <script type="module">
       import { ApiClient } from "https://cdn.jsdelivr.net/npm/@twurple/api@7.2.1/+esm";
       import { StaticAuthProvider } from "https://cdn.jsdelivr.net/npm/@twurple/auth@7.2.1/+esm";
       import { EventSubWsListener } from "https://cdn.jsdelivr.net/npm/@twurple/eventsub-ws@7.2.1/+esm";
-
-      const hashToken = document.location.hash.slice(1);
-      const hashConfig = new URLSearchParams(hashToken);
 
       const clientID =
         hashConfig.get("client") ?? "loh6hmf1odxlkqbgmv7b22lw4bl5rm";
