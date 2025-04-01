@@ -8,20 +8,21 @@
   &:not([theme="dark"]),
   &:not([theme="light"]) {
     @include dark.theme-dark; // default theme
-    color-scheme: dark;
+    color-scheme: only dark;
+
     @media (prefers-color-scheme: light) {
       @include light.theme-light;
-      color-scheme: light;
+      color-scheme: only light;
     }
   }
 
   &[theme="dark"] {
     @include dark.theme-dark;
-    color-scheme: dark;
+    color-scheme: only dark;
   }
   &[theme="light"] {
     @include light.theme-light;
-    color-scheme: light;
+    color-scheme: only light;
   }
 }
 
