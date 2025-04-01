@@ -2,6 +2,11 @@ import { defineStore } from "pinia";
 import localforage from "localforage";
 
 const themes = ["auto", "dark", "light"];
+export const generateRootedLink = (p: string) =>
+  `${document.location.protocol}//${document.location.host}/${[
+    ...document.location.pathname.split("/").filter((c) => c.trim()),
+    p,
+  ].join("/")}`;
 
 localforage.config({
   driver: localforage.INDEXEDDB,

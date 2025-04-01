@@ -7,7 +7,7 @@ import {
   onMounted,
   onBeforeMount,
 } from "vue-demi";
-import { useStore, Reward } from "../store";
+import { useStore, Reward, generateRootedLink } from "../store";
 import copy from "copy-to-clipboard";
 import SoundSelect from "../components/SoundSelect.vue";
 import ThemeButton from "../components/ThemeButton.vue";
@@ -95,7 +95,7 @@ const isValid = computed(
 );
 
 const generatedLink = computed(() => {
-  const head = "https://aneyo.github.io/points.js/widget#";
+  const head = generateRootedLink("widget.html#");
   const params = new URLSearchParams();
 
   params.set("l", store.config!.list);
