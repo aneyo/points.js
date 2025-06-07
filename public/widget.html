@@ -167,6 +167,10 @@
         overflow: hidden;
       }
 
+      .sound > * {
+        z-index: 1;
+      }
+
       .list.funky > .sound {
         font-family: Pangolin, cursive !important;
       }
@@ -181,6 +185,10 @@
         position: absolute;
         inset: 0;
         animation: duration var(--duration, 5s) linear 0s 1 forwards;
+      }
+
+      .sound.duration-old::after {
+        animation: duration_old var(--duration, 5s) linear 0s 1 forwards;
       }
 
       .sound.end {
@@ -204,7 +212,7 @@
         }
       }
 
-      @keyframes duration {
+      @keyframes duration_old {
         from {
           width: 0%;
           opacity: 1;
@@ -219,6 +227,16 @@
           width: 100%;
         }
       }
+
+      @keyframes duration {
+        from {
+          width: 0%;
+        }
+
+        to {
+          width: 100%;
+        }
+      }
     </style>
   </head>
   <body>
@@ -226,7 +244,7 @@
 
     <script id="template" type="application/html">
       <div class="sound">
-        <svg xmlns="http://www.w3.org/2000/svg" height="1.5em" viewBox="0 -960 960 960" width="1.2em" fill="currentColor"><path d="M760-481q0-83-44-151.5T598-735q-15-7-22-21.5t-2-29.5q6-16 21.5-23t31.5 0q97 43 155 131.5T840-481q0 108-58 196.5T627-153q-16 7-31.5 0T574-176q-5-15 2-29.5t22-21.5q74-34 118-102.5T760-481ZM280-360H160q-17 0-28.5-11.5T120-400v-160q0-17 11.5-28.5T160-600h120l132-132q19-19 43.5-8.5T480-703v446q0 27-24.5 37.5T412-228L280-360Zm380-120q0 42-19 79.5T591-339q-10 6-20.5.5T560-356v-250q0-12 10.5-17.5t20.5.5q31 25 50 63t19 80Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" height="1.5rem" viewBox="0 -960 960 960" width="1.2em" fill="currentColor"><path d="M760-481q0-83-44-151.5T598-735q-15-7-22-21.5t-2-29.5q6-16 21.5-23t31.5 0q97 43 155 131.5T840-481q0 108-58 196.5T627-153q-16 7-31.5 0T574-176q-5-15 2-29.5t22-21.5q74-34 118-102.5T760-481ZM280-360H160q-17 0-28.5-11.5T120-400v-160q0-17 11.5-28.5T160-600h120l132-132q19-19 43.5-8.5T480-703v446q0 27-24.5 37.5T412-228L280-360Zm380-120q0 42-19 79.5T591-339q-10 6-20.5.5T560-356v-250q0-12 10.5-17.5t20.5.5q31 25 50 63t19 80Z"/></svg>
         <span>%username%</span>
       </div>
     </script>
@@ -277,6 +295,8 @@
         );
 
         console.log("load ended!");
+        if (loadedSounds.size < 1)
+          addMessageElement("Не загрузилось ни одного звука!", "error");
         state.ready = true;
 
         window.addEventListener("click", window.fakeSound);
@@ -285,12 +305,12 @@
       const template = document.getElementById("template").innerText;
       const listEl = document.getElementById("list");
 
-      function addElement(name, sound, duration = 3000) {
+      function addElement(name, duration = 3000) {
         const _element = document.createElement("div");
         _element.innerHTML = template.replace("%username%", name).trim();
         const element = _element.firstChild;
         element.setAttribute("style", `--duration:${duration}ms`);
-        element.classList.add("duration");
+        element.classList.add("duration"); // should move to animations api
         listEl.append(element);
         return element;
       }
@@ -307,8 +327,9 @@
 
       async function playSound(name, sound, duration) {
         if (!state.ready) return;
+
         broadcast.postMessage({ name, sound, duration });
-        const element = addElement(name, sound, duration);
+        const element = addElement(name, duration);
         try {
           await soundboard.playAudio(sound);
         } catch (error) {
@@ -320,6 +341,13 @@
         return endSound(element);
       }
 
+      function showNotification(message, duration = 3_000) {
+        // bypass ready state
+        broadcast.postMessage({ name: message, sound: null, duration });
+        const element = addElement(message, duration);
+        return setTimeout(() => endSound(element), duration);
+      }
+
       /** @param {HTMLDivElement} el */
       function endSound(el) {
         el.classList.add("end");
@@ -329,18 +357,22 @@
       }
 
       window.fakeSound = function () {
+        if (loadedSounds.size < 1) return showNotification("Hello world!");
+
         const name =
           randomNicks[Math.floor(randomNicks.length * Math.random())];
         return window.playRandomSound(name);
       };
 
       window.playRandomSound = function (name) {
+        if (loadedSounds.size < 1) return;
         const sound = soundboard.getRandomAudio();
         return playSound(name, sound.url, sound.duration);
       };
 
       window.loadSounds = loadSounds;
       window.addMessageElement = addMessageElement;
+      window.showNotification = showNotification;
 
       broadcast.addEventListener("message", window.fakeSound);
     </script>
