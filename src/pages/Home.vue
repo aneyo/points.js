@@ -222,7 +222,7 @@ const greeting = computed(() => {
     <it-input
       label-top="Список звуков"
       prefix-icon="summarize"
-      placeholder="https://gist.githubusercontent.com/aneyo/4566b18ed624ac7c2b28daaedc28c7dd/raw/points.txt"
+      placeholder="https://gist.githubusercontent.com/aneyo/4566b18ed624ac7c2b28daaedc28c7dd/raw/modern.ulist"
       v-model.trim="store.config!.list"
       :status="validators.list.value ? null : 'danger'"
       :message="

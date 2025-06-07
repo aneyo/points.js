@@ -51,7 +51,7 @@ export interface Reward {
 
 const defaultConfig: MainConfig = {
   theme: "auto",
-  list: "https://gist.githubusercontent.com/aneyo/4566b18ed624ac7c2b28daaedc28c7dd/raw/points.txt",
+  list: "https://gist.githubusercontent.com/aneyo/4566b18ed624ac7c2b28daaedc28c7dd/raw/modern.ulist",
   volume: 0.5,
   pos: {
     v: "top",
